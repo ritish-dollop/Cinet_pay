@@ -8,6 +8,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT || '22' }}
 
     steps:
       - name: Checkout Repository
@@ -36,37 +41,37 @@ jobs:
           echo "Prepared JAR: $(ls -lh deployment/cinet-pay.jar)"
 
       - name: Setup SSH
-        if: ${{ secrets.SERVER_HOST != '' }}
+        if: env.SERVER_HOST != ''
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
       - name: Add Server to Known Hosts
-        if: ${{ secrets.SERVER_HOST != '' }}
+        if: env.SERVER_HOST != ''
         run: |
-          ssh-keyscan -p ${{ secrets.SERVER_PORT || 22 }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p "${SERVER_PORT:-22}" -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Ensure Remote Directory Exists
-        if: ${{ secrets.SERVER_HOST != '' }}
+        if: env.SERVER_HOST != ''
         run: |
-          ssh -p ${{ secrets.SERVER_PORT || 22 }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "mkdir -p ~/cinetpay-app"
+          ssh -p "${SERVER_PORT:-22}" "$SERVER_USER@$SERVER_HOST" "mkdir -p ~/cinetpay-app"
 
       - name: Upload JAR
-        if: ${{ secrets.SERVER_HOST != '' }}
+        if: env.SERVER_HOST != ''
         run: |
-          scp -P ${{ secrets.SERVER_PORT || 22 }} deployment/cinet-pay.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/cinetpay-app/cinet-pay.jar
+          scp -P "${SERVER_PORT:-22}" deployment/cinet-pay.jar "$SERVER_USER@$SERVER_HOST:~/cinetpay-app/cinet-pay.jar"
 
       - name: Restart Backend Service
-        if: ${{ secrets.SERVER_HOST != '' }}
+        if: env.SERVER_HOST != ''
         run: |
-          ssh -p ${{ secrets.SERVER_PORT || 22 }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "sudo systemctl restart cinetpay 2>/dev/null || (pkill -f cinet-pay.jar || true; nohup java -jar ~/cinetpay-app/cinet-pay.jar > ~/cinetpay-app/app.log 2>&1 &)"
+          ssh -p "${SERVER_PORT:-22}" "$SERVER_USER@$SERVER_HOST" "sudo systemctl restart cinetpay 2>/dev/null || (pkill -f cinet-pay.jar || true; nohup java -jar ~/cinetpay-app/cinet-pay.jar > ~/cinetpay-app/app.log 2>&1 &)"
 
       - name: Verify Health
-        if: ${{ secrets.SERVER_HOST != '' }}
+        if: env.SERVER_HOST != ''
         run: |
           for i in {1..12}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.SERVER_HOST }}:8080/api/health || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${SERVER_HOST}:8080/api/health" || echo "000")
             if [ "$STATUS" -eq 200 ]; then
               echo "Application is UP (HTTP 200)!"
               exit 0
@@ -79,4 +84,6 @@ jobs:
 
       - name: Deployment Successful
         run: |
-          echo "Build & Deployment workflow finished successfully!"
+          echo "=========================================="
+          echo "Application build and deployment completed!"
+          echo "=========================================="
