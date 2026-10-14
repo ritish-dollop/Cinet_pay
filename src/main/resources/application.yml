@@ -3,36 +3,37 @@ spring:
     name: Cinet_pay
 
   datasource:
-    url: jdbc:mysql://localhost:3306/cinetpay_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:cinetpay_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
 
-    show-sql: true
+    show-sql: false
 
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
 
     database-platform: org.hibernate.dialect.MySQLDialect
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 cinetpay:
-  apikey: ${CINETPAY_API_KEY}
-  api-password: ${CINETPAY_API_PASSWORD}
-  base-url: https://api.cinetpay.net
+  apikey: ${CINETPAY_API_KEY:}
+  api-password: ${CINETPAY_API_PASSWORD:}
+  base-url: ${CINETPAY_BASE_URL:https://api.cinetpay.net}
 
-  success-url: http://localhost:8080/api/payment/success
-  failed-url: http://localhost:8080/api/payment/failed
-  notify-url: http://localhost:8080/api/payment/notify
+  success-url: ${CINETPAY_SUCCESS_URL:http://localhost:8080/api/payment/success}
+  failed-url: ${CINETPAY_FAILED_URL:http://localhost:8080/api/payment/failed}
+  notify-url: ${CINETPAY_NOTIFY_URL:http://localhost:8080/api/payment/notify}
 
-  lang: fr
-  direct-pay: false
+  lang: ${CINETPAY_LANG:fr}
+  direct-pay: ${CINETPAY_DIRECT_PAY:false}
+  webhook-secret: ${WEBHOOK_SECRET:}
 
-webhook-secret: ${WEBHOOK_SECRET}
+webhook-secret: ${WEBHOOK_SECRET:}
