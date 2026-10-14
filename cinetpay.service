@@ -1,0 +1,14 @@
+[Unit]
+Description=CinetPay Spring Boot Service
+After=syslog.target network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/cinetpay-app
+ExecStart=/usr/bin/java -jar /home/ubuntu/cinetpay-app/cinet-pay.jar
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

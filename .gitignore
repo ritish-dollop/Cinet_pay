@@ -37,6 +37,3 @@ build/
 .env.*
 !.env.example
 
-### Docker & Deployment Artifacts ###
-*.tar
-docker-compose.override.yml
